@@ -36,12 +36,4 @@ public class NewsfeedLike extends TimeStamp {
         this.userId = userId;
         this.newsfeed = newsfeed;
     }
-
-    /**
-     * 뉴스피드를 설정하는 메서드
-     * @param newsfeed 뉴스피드 엔티티
-     */
-    public void setNewsfeed(Newsfeed newsfeed) {
-        this.newsfeed = newsfeed;
-    }
 }
