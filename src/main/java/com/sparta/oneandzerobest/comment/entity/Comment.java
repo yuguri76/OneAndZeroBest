@@ -40,18 +40,4 @@ public class Comment extends TimeStamp {
         this.userId = userId;
         this.content = content;
     }
-
-    /**
-     * 댓글 수정 시간을 설정하는 메서드
-     * @param modifiedAt 수정 시간
-     */
-    public void setModifiedAt(LocalDateTime modifiedAt) {
-        try {
-            Field field = TimeStamp.class.getDeclaredField("modifiedAt");
-            field.setAccessible(true);
-            field.set(this, modifiedAt);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace(); //timestamp에 setter추가하기 고려
-        }
-    }
 }
