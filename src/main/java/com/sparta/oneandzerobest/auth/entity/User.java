@@ -57,7 +57,7 @@ public class User implements UserDetails { // Spring Security의 UserDetails
         this.name = name;
         this.email = email;
         this.statusCode = statusCode;
-        this.createdAt = LocalDateTime.now();
+        //this.createdAt = LocalDateTime.now();
     }
 
     /**
