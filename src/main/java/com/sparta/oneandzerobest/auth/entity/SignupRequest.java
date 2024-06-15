@@ -11,4 +11,13 @@ public class SignupRequest {
     private String email;
     private boolean isAdmin;
     private String adminToken;
+
+    public SignupRequest(String username, String password, String email, boolean isAdmin,
+        String adminToken) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.isAdmin = isAdmin;
+        this.adminToken = adminToken;
+    }
 }

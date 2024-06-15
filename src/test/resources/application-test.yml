@@ -9,3 +9,11 @@ spring:
     hibernate:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
+jwt:
+  test-secret:
+    key: testkeyyyyyyyy
+  token:
+    expiration: 1800000
+  refresh:
+    token:
+      expiration: 1209600000

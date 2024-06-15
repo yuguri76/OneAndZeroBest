@@ -76,7 +76,6 @@ public class CommentService {
         Comment comment = commentRepository.findByIdAndNewsfeedIdAndUserId(commentId, newsfeedId, userId)
                 .orElseThrow(() -> new CommentNotFoundException("해당 댓글이 존재하지 않거나 권한이 없습니다."));
         comment.setContent(requestDto.getContent());
-        comment.setModifiedAt(LocalDateTime.now());
         comment = commentRepository.save(comment);
         return new CommentResponseDto(comment);
     }
