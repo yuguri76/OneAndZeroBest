@@ -1,29 +1,103 @@
 spring:
-  datasource :
+  application:
+    name: OneAndZeroBest
+  datasource:
     url: jdbc:h2:mem:test
-    driverClassName: org.h2.Driver
     username: sa
     password:
+    driver-class-name: org.h2.Driver
   jpa:
     hibernate:
       ddl-auto: create-drop
+    show-sql: true
     database-platform: org.hibernate.dialect.H2Dialect
   mail:
     host: smtp.gmail.com
     port: 587
-    username: dami8789@gmail.com
-    password: yegy zklw yanz lugt
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 200MB
+      max-request-size: 200MB
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            client-authentication-method: post
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8080/api/auth/social/kakao"
+            scope: profile_nickname, profile_image
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-authentication-method: post
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8080/api/auth/social/google"
+            scope: profile, email
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            client-authentication-method: post
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://localhost:8080/api/auth/social/github"
+            scope: user
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v1/userinfo
+            user-name-attribute: id
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+            user-name-attribute: id
+
+app:
+  email:
+    verification:
+      subject: 이메일 인증
+      text: 귀하의 인증 코드는 %s 입니다.
+      expiry: 3
+
 jwt:
   secret:
-    key: e36f112d-aaaa-bbbb-cccc-14dcdc16360b
+    key: ${JWT_SECRET_KEY}
   token:
     expiration: 1800000
   refresh:
     token:
       expiration: 1209600000
+
+cloud:
+  aws:
+    s3:
+      bucketName: ${BUCKET_NAME}
+    credentials:
+      accessKey: ${AWS_ACCESS_KEY}
+      secretKey: ${AWS_SECRET_KEY}
+    region:
+      static: ap-southeast-2
+      auto: true
+    stack:
+      auto: true
+
+server:
+  port: 8080

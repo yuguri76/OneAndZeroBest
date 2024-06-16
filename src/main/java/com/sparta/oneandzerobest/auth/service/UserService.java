@@ -5,21 +5,22 @@ import com.sparta.oneandzerobest.auth.entity.LoginRequest;
 import com.sparta.oneandzerobest.auth.entity.LoginResponse;
 import com.sparta.oneandzerobest.auth.entity.SignupRequest;
 import com.sparta.oneandzerobest.auth.entity.User;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public interface UserService {
     // 회원가입
-    void signup(SignupRequest signupRequest);
+    ResponseEntity<String> signup(SignupRequest signupRequest);
 
     // 로그인
     LoginResponse login(LoginRequest loginRequest);
 
     // 로그아웃
-    void logout(String username, String accessToken, String refreshToken);
+    ResponseEntity<String> logout(String username, String accessToken, String refreshToken);
 
     // 탈퇴
-    void withdraw(String username, String password, String accessToken, String refreshToken);
+    ResponseEntity<String> withdraw(String username, String password, String accessToken, String refreshToken);
 
     // 리프레시 토큰
     TokenResponseDto refresh(String refreshToken);

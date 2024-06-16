@@ -2,7 +2,7 @@ spring:
   application:
     name: OneAndZeroBest
   datasource:
-    url: jdbc:mysql://${DATABASE_ENDPOINT}:3306/db_oneandzero
+    url: jdbc:mysql://${DATABASE_ENDPOINT}:3306/siumechu
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
