@@ -17,6 +17,10 @@ import com.sparta.oneandzerobest.auth.util.JwtUtil;
 import com.sparta.oneandzerobest.config.MockSpringSecurityFilter;
 import com.sparta.oneandzerobest.config.TestJwtConfig;
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,6 +49,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
@@ -84,7 +90,7 @@ public class AuthRestControllerTest {
     UserServiceImpl userService;
     @MockBean
     JwtUtil jwtUtil;
-    @MockBean
+    @Mock
     RedisTemplate<String, String> redisTemplate;
     @MockBean
     EmailService emailService;
@@ -92,6 +98,8 @@ public class AuthRestControllerTest {
     PasswordEncoder passwordEncoder;
     @MockBean
     UserRepository userRepository;
+    @MockBean
+    Random random;
     @Autowired
     TestJwtConfig testJwtConfig;
 
@@ -131,7 +139,7 @@ public class AuthRestControllerTest {
         SignupRequest signupRequest = new SignupRequest(username, password, email, isAdmin,
             adminToken);
 
-        //when then
+        //when
         mvc.perform(MockMvcRequestBuilders.post("/api/auth/signup")
                 .contentType("application/json")
                 .content(objectMapper.writeValueAsString(signupRequest)))
@@ -144,7 +152,6 @@ public class AuthRestControllerTest {
     @Order(2)
     void test_login() throws Exception {
         //given
-
 
         LoginRequest loginRequest = new LoginRequest(USERNAME, PASSWORD);
 
@@ -195,7 +202,7 @@ public class AuthRestControllerTest {
         paramRequestMap.add("accessToken", accessToken);
         paramRequestMap.add("refreshToekn", refreshToken);
 
-        // when -then
+        // when - then
 
         mvc.perform(MockMvcRequestBuilders.post("/api/auth/withdraw")
             .params(paramRequestMap))
@@ -213,20 +220,33 @@ public class AuthRestControllerTest {
         RefreshTokenRequestDto requestDto = new RefreshTokenRequestDto();
         requestDto.setRefreshToken(refreshToken);
 
-        //when -then
+        //when - then
         mvc.perform(MockMvcRequestBuilders.post("/api/auth/refresh")
                 .contentType("application/json")
                 .content(objectMapper.writeValueAsString(requestDto)))
+            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
             .andDo(MockMvcResultHandlers.print());
     }
 
     @Test
     @DisplayName("이메일 인증")
     @Order(6)
-    void test_verifyEmail(){
+    void test_verifyEmail() throws Exception{
         //given
         String username = USERNAME;
-        String verificationCode = "";
+        String verificationCode = String.valueOf(100000 + random.nextInt(900000));
+
+        redisTemplate.opsForValue().set(username,verificationCode,3, TimeUnit.MINUTES);
+
+        MultiValueMap<String, String> paramRequestMap = new LinkedMultiValueMap<>();
+        paramRequestMap.add("username", username);
+        paramRequestMap.add("verificationCode",verificationCode);
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.post("/api/auth/verify-email")
+                .params(paramRequestMap))
+            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+            .andDo(MockMvcResultHandlers.print());
 
     }
 }
