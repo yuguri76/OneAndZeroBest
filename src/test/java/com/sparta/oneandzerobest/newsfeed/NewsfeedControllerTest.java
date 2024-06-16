@@ -1,13 +1,9 @@
-package com.sparta.oneandzerobest.user;
+package com.sparta.oneandzerobest.newsfeed;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.oneandzerobest.auth.controller.AuthRestController;
-import com.sparta.oneandzerobest.auth.dto.RefreshTokenRequestDto;
 import com.sparta.oneandzerobest.auth.email.service.EmailService;
-import com.sparta.oneandzerobest.auth.entity.LoginRequest;
-import com.sparta.oneandzerobest.auth.entity.LoginResponse;
-import com.sparta.oneandzerobest.auth.entity.SignupRequest;
 import com.sparta.oneandzerobest.auth.entity.User;
 import com.sparta.oneandzerobest.auth.entity.UserStatus;
 import com.sparta.oneandzerobest.auth.repository.UserRepository;
@@ -16,13 +12,15 @@ import com.sparta.oneandzerobest.auth.service.UserServiceImpl;
 import com.sparta.oneandzerobest.auth.util.JwtUtil;
 import com.sparta.oneandzerobest.config.MockSpringSecurityFilter;
 import com.sparta.oneandzerobest.config.TestJwtConfig;
+import com.sparta.oneandzerobest.newsfeed.controller.NewsfeedController;
+import com.sparta.oneandzerobest.newsfeed.dto.NewsfeedRequestDto;
+import com.sparta.oneandzerobest.newsfeed.entity.Newsfeed;
+import com.sparta.oneandzerobest.newsfeed.repository.NewsfeedRepository;
+import com.sparta.oneandzerobest.newsfeed.service.NewsfeedService;
+import com.sparta.oneandzerobest.s3.service.ImageService;
 import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -33,12 +31,14 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
@@ -49,9 +49,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 
 import static org.mockito.BDDMockito.*;
@@ -70,10 +67,11 @@ import static org.mockito.BDDMockito.*;
 @TestInstance(Lifecycle.PER_CLASS)
 @Import(TestJwtConfig.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class AuthRestControllerTest {
+public class NewsfeedControllerTest {
 
     private MockMvc mvc;
 
+    private Principal mockPrincipal;
 
     @Autowired
     private WebApplicationContext context;
@@ -82,30 +80,34 @@ public class AuthRestControllerTest {
 
 
     @MockBean
-    AuthRestController authRestController;
+    NewsfeedController newsfeedController;
+    @MockBean
+    NewsfeedRepository newsfeedRepository;
     @MockBean
     UserDetailsServiceImpl userDetailsService;
     @MockBean
     UserServiceImpl userService;
     @MockBean
     JwtUtil jwtUtil;
-    @Mock
-    RedisTemplate<String, String> redisTemplate;
-    @MockBean
-    EmailService emailService;
     @MockBean
     PasswordEncoder passwordEncoder;
     @MockBean
     UserRepository userRepository;
     @MockBean
     Random random;
+    @MockBean
+    NewsfeedService newsfeedService;
     @Autowired
     TestJwtConfig testJwtConfig;
+
+    @MockBean
+    ImageService imageService;
+    @MockBean
+    AmazonS3Client amazonS3Client;
 
     final String USERNAME = "Seokjoon123";
     final String PASSWORD = "1234@123aaaa";
     final String EMAIL = "tjrwns3428@gmail.com";
-
 
     @BeforeAll
     void setUp() {
@@ -114,138 +116,141 @@ public class AuthRestControllerTest {
             .build();
 
         JwtUtil.init(testJwtConfig);
-        this.setupUser();
-    }
 
-    void setupUser(){
         String encodedPassword = passwordEncoder.encode(PASSWORD);
         User user = new User(USERNAME, encodedPassword, USERNAME, EMAIL, UserStatus.ACTIVE);
-
         userRepository.save(user);
+
+        Newsfeed newsfeed = new Newsfeed(1L,"Newsfeed Content");
+        newsfeedRepository.save(newsfeed);
     }
 
+
     @Test
-    @DisplayName("회원가입")
+    @DisplayName("뉴스피드 생성")
     @Order(1)
-    void test_signup() throws Exception {
-
+    void test_postNewsfeed() throws Exception{
         //given
-        String username = "Seokjoon1234";
-        String password = "1234@123aaaa";
-        String email = "nellucia@naver.com";
-        boolean isAdmin = false;
-        String adminToken = "";
-        SignupRequest signupRequest = new SignupRequest(username, password, email, isAdmin,
-            adminToken);
+        String token ="Bearer "+jwtUtil.createAccessToken(USERNAME);
 
-        //when
-        mvc.perform(MockMvcRequestBuilders.post("/api/auth/signup")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(signupRequest)))
-            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
-            .andDo(MockMvcResultHandlers.print());
-    }
-
-    @Test
-    @DisplayName("로그인")
-    @Order(2)
-    void test_login() throws Exception {
-        //given
-
-        LoginRequest loginRequest = new LoginRequest(USERNAME, PASSWORD);
-
-        //when then
-        mvc.perform(MockMvcRequestBuilders.post("/api/auth/login")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(loginRequest)))
-            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
-            .andDo(MockMvcResultHandlers.print());
-
-    }
-
-    @Test
-    @DisplayName("로그아웃")
-    @Order(3)
-    void test_logout() throws Exception {
-        // given
-
-        String accessToken = jwtUtil.createAccessToken(USERNAME);
-        String refreshToken = jwtUtil.createRefreshToken(USERNAME);
-
-        MultiValueMap<String, String> paramRequestMap = new LinkedMultiValueMap<>();
-        paramRequestMap.add("username", USERNAME);
-        paramRequestMap.add("accessToken", accessToken);
-        paramRequestMap.add("refreshToken", refreshToken);
-
-        //when -then
-        mvc.perform(MockMvcRequestBuilders.post("/api/auth/logout")
-                .contentType("application/json")
-                .params(paramRequestMap))
-            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
-            .andDo(MockMvcResultHandlers.print());
-    }
-
-    @Test
-    @DisplayName("회원탈퇴")
-    @Order(4)
-    void test_withdraw() throws Exception {
-        // given
-        String username= USERNAME;
-        String password = PASSWORD;
-        String accessToken = jwtUtil.createAccessToken(USERNAME);
-        String refreshToken = jwtUtil.createRefreshToken(USERNAME);
-
-        MultiValueMap<String,String> paramRequestMap = new LinkedMultiValueMap<>();
-        paramRequestMap.add("username", username);
-        paramRequestMap.add("password", password);
-        paramRequestMap.add("accessToken", accessToken);
-        paramRequestMap.add("refreshToekn", refreshToken);
-
-        // when - then
-
-        mvc.perform(MockMvcRequestBuilders.post("/api/auth/withdraw")
-            .params(paramRequestMap))
-            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
-            .andDo(MockMvcResultHandlers.print());
-
-    }
-
-    @Test
-    @DisplayName("리프레시 토큰 재발급")
-    @Order(5)
-    void test_refresh() throws Exception {
-        //given
-        String refreshToken = jwtUtil.createRefreshToken(USERNAME);
-        RefreshTokenRequestDto requestDto = new RefreshTokenRequestDto();
-        requestDto.setRefreshToken(refreshToken);
+        String content = "newsfeeed Content";
+        NewsfeedRequestDto newsfeedRequestDto = new NewsfeedRequestDto();
+        newsfeedRequestDto.setContent(content);
 
         //when - then
-        mvc.perform(MockMvcRequestBuilders.post("/api/auth/refresh")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(requestDto)))
+        mvc.perform(MockMvcRequestBuilders.post("/newsfeed")
+            .header("Authorization", token)
+            .contentType("application/json")
+            .content(objectMapper.writeValueAsString(newsfeedRequestDto)))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
             .andDo(MockMvcResultHandlers.print());
     }
 
     @Test
-    @DisplayName("이메일 인증")
-    @Order(6)
-    void test_verifyEmail() throws Exception{
-        //given
-        String username = USERNAME;
-        String verificationCode = String.valueOf(100000 + random.nextInt(900000));
+    @DisplayName("뉴스피드 조회")
+    @Order(2)
+    void test_getAllNewsfeed() throws Exception{
+        // given
+        int page = 0;
+        int size = 10;
+        boolean isASC = false;
+        boolean like = false;
 
-        redisTemplate.opsForValue().set(username,verificationCode,3, TimeUnit.MINUTES);
-
-        MultiValueMap<String, String> paramRequestMap = new LinkedMultiValueMap<>();
-        paramRequestMap.add("username", username);
-        paramRequestMap.add("verificationCode",verificationCode);
+        String token ="Bearer "+jwtUtil.createAccessToken(USERNAME);
 
         // when - then
-        mvc.perform(MockMvcRequestBuilders.post("/api/auth/verify-email")
-                .params(paramRequestMap))
+        mvc.perform(MockMvcRequestBuilders.get("/newsfeed")
+            .param("page",String.valueOf(page))
+            .param("size",String.valueOf(size))
+            .param("isASC",String.valueOf(isASC))
+            .param("like",String.valueOf(like))
+            .header("Authorization",token))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
             .andDo(MockMvcResultHandlers.print());
-
     }
+
+    @Test
+    @DisplayName("뉴스피드 수정")
+    @Order(3)
+    void test_putNewwsfeed() throws Exception{
+        // given
+        Long id = 1L;
+        String token ="Bearer "+jwtUtil.createAccessToken(USERNAME);
+
+        String content = "newsfeeed Content";
+        NewsfeedRequestDto newsfeedRequestDto = new NewsfeedRequestDto();
+        newsfeedRequestDto.setContent(content);
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.put("/newsfeed/{id}", id)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(newsfeedRequestDto))
+                .header("Authorization", token))
+            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+            .andDo(MockMvcResultHandlers.print());
+    }
+
+    @Test
+    @DisplayName("뉴스피드 삭제")
+    @Order(4)
+    void test_deleteNewsfeed() throws Exception{
+        // given
+        Long id = 1L;
+        String token ="Bearer "+jwtUtil.createAccessToken(USERNAME);
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.delete("/newsfeed/{id}", id)
+                .header("Authorization", token))
+            .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+            .andDo(MockMvcResultHandlers.print());
+    }
+
+    @Test
+    @DisplayName("사진 업로드")
+    @Order(5)
+    void test_uploadImageToNewsfeed() throws  Exception{
+        // given
+        Long id = 1L;
+        String token ="Bearer "+jwtUtil.createAccessToken(USERNAME);
+
+        MockMultipartFile file = new MockMultipartFile(
+            "file",
+            "test-image.jpg",
+            MediaType.IMAGE_JPEG_VALUE,
+            "test image content".getBytes()
+        );
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.multipart("/newsfeed/media")
+                .file(file)
+                .param("id", String.valueOf(id))
+                .header("Authorization", token))
+            .andDo(MockMvcResultHandlers.print());
+    }
+
+    @Test
+    @DisplayName("사진 수정")
+    @Order(6)
+    void test_updateImageToNewsfeed() throws Exception{
+        // given
+        Long id = 1L;
+        Long fileId = 1L;
+        String token ="Bearer "+jwtUtil.createAccessToken(USERNAME);
+
+        MockMultipartFile file = new MockMultipartFile(
+            "file",
+            "test-image-update.jpg",
+            MediaType.IMAGE_JPEG_VALUE,
+            "test image content".getBytes()
+        );
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.multipart(HttpMethod.PUT, "/newsfeed/media")
+                .file(file)
+                .param("id", String.valueOf(id))
+                .param("fileid", String.valueOf(fileId))
+                .header("Authorization", token))
+            .andDo(MockMvcResultHandlers.print());
+    }
+
 }
