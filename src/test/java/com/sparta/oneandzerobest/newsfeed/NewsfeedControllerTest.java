@@ -54,7 +54,7 @@ import org.springframework.web.context.WebApplicationContext;
 import static org.mockito.BDDMockito.*;
 
 @WebMvcTest(
-    controllers = AuthRestController.class,
+    controllers = NewsfeedController.class,
     excludeFilters = {
         @ComponentScan.Filter(
             type = FilterType.ASSIGNABLE_TYPE,
@@ -71,13 +71,11 @@ public class NewsfeedControllerTest {
 
     private MockMvc mvc;
 
-    private Principal mockPrincipal;
 
     @Autowired
     private WebApplicationContext context;
     @Autowired
     private ObjectMapper objectMapper;
-
 
     @MockBean
     NewsfeedController newsfeedController;
