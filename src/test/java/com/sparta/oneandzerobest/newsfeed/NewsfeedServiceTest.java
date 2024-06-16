@@ -215,8 +215,6 @@ public class NewsfeedServiceTest {
         // then
         assertEquals(response.getStatusCode(),HttpStatus.OK);
         assertEquals(response.getBody(),contentId);
-
-
     }
 
 }
