@@ -4,14 +4,24 @@ spring:
     driverClassName: org.h2.Driver
     username: sa
     password:
-
   jpa:
     hibernate:
       ddl-auto: create-drop
     database-platform: org.hibernate.dialect.H2Dialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: dami8789@gmail.com
+    password: yegy zklw yanz lugt
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 jwt:
-  test-secret:
-    key: testkeyyyyyyyy
+  secret:
+    key: e36f112d-aaaa-bbbb-cccc-14dcdc16360b
   token:
     expiration: 1800000
   refresh:

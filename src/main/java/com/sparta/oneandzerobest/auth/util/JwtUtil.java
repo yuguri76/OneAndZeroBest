@@ -4,7 +4,6 @@ import com.sparta.oneandzerobest.auth.config.JwtConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +22,7 @@ public class JwtUtil {
     private static final Set<String> blacklistedTokens = ConcurrentHashMap.newKeySet();
 
     // 인스턴스화 방지
-    private JwtUtil() {}
+    protected JwtUtil() {}
 
     // JwtConfig를 사용하여 설정 값을 초기화
     public static void init(JwtConfig jwtConfig) {
