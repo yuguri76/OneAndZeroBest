@@ -38,8 +38,7 @@ public class AuthRestController {
      */
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody SignupRequest signupRequest) {
-        userService.signup(signupRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body("회원가입 성공");
+        return userService.signup(signupRequest);
     }
 
     /**
@@ -68,8 +67,7 @@ public class AuthRestController {
      */
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestParam String username,String accessToken,String refreshToken) {
-        userService.logout(username, accessToken, refreshToken);
-        return ResponseEntity.ok("로그아웃 성공");
+        return userService.logout(username, accessToken, refreshToken);
     }
 
     /**
@@ -80,8 +78,7 @@ public class AuthRestController {
      */
     @PostMapping("/withdraw")
     public ResponseEntity<String> withdraw(@RequestParam String username, @RequestParam String password,String accessToken,String refreshToken) {
-        userService.withdraw(username, password, accessToken,refreshToken);
-        return ResponseEntity.ok("회원탈퇴 성공");
+        return userService.withdraw(username, password, accessToken,refreshToken);
     }
 
     /**

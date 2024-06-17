@@ -11,6 +11,7 @@ import com.sparta.oneandzerobest.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,7 +51,7 @@ public class UserServiceImpl implements UserService {
      * @param signupRequest
      */
     @Override
-    public void signup(SignupRequest signupRequest) {
+    public ResponseEntity<String> signup(SignupRequest signupRequest) {
         String authId = signupRequest.getUsername();
         String password = signupRequest.getPassword();
         String email = signupRequest.getEmail();
@@ -70,7 +71,7 @@ public class UserServiceImpl implements UserService {
             if (user.getStatusCode().equals(UserStatus.UNVERIFIED)) {
                 // 인증 전 상태일 때는 이메일을 업데이트하고 새로운 인증 이메일을 보냄
                 updateEmail(signupRequest);
-                return;
+                 return ResponseEntity.ok("이메일 재 전송");
             }
             throw new InfoNotCorrectedException("중복된 사용자 ID가 존재합니다.");
         }
@@ -84,6 +85,7 @@ public class UserServiceImpl implements UserService {
         User user = new User(authId, encodedPassword, signupRequest.getUsername(), email, UserStatus.UNVERIFIED);
         userRepository.save(user);
         sendVerificationEmail(user);
+        return ResponseEntity.ok("회원가입 성공");
     }
 
     /**
@@ -103,7 +105,7 @@ public class UserServiceImpl implements UserService {
     private void sendVerificationEmail(User user) {
         String verificationCode = generateVerificationCode();
         // Redis에 인증 코드를 저장하고 3분 유지
-        redisTemplate.opsForValue().set(user.getUsername(), verificationCode, verificationExpiry, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(user.getUsername(), verificationCode, 3, TimeUnit.MINUTES);
         String text = String.format("귀하의 인증 코드는 %s 입니다.", verificationCode);
         emailService.sendEmail(user.getEmail(), "이메일 인증", text);
     }
@@ -150,7 +152,7 @@ public class UserServiceImpl implements UserService {
      * @param username
      */
     @Override
-    public void logout(String username, String accessToken, String refreshToken) {
+    public ResponseEntity<String> logout(String username, String accessToken, String refreshToken) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new InfoNotCorrectedException("사용자를 찾을 수 없습니다."));
 
@@ -161,6 +163,8 @@ public class UserServiceImpl implements UserService {
         jwtUtil.addblacklistToken(refreshToken);
 
         userRepository.save(user);
+
+        return ResponseEntity.ok("로그아웃 성공");
     }
 
     /**
@@ -170,7 +174,7 @@ public class UserServiceImpl implements UserService {
      * @param password: 비밀번호
      */
     @Override
-    public void withdraw(String id, String password, String accessToken, String refreshToken) {
+    public ResponseEntity<String> withdraw(String id, String password, String accessToken, String refreshToken) {
         User user = userRepository.findByUsername(id)
                 .orElseThrow(() -> new InfoNotCorrectedException("사용자를 찾을 수 없습니다."));
 
@@ -188,6 +192,8 @@ public class UserServiceImpl implements UserService {
         jwtUtil.addblacklistToken(refreshToken);
 
         userRepository.save(user);
+
+        return ResponseEntity.ok("회원탈퇴 성공");
     }
 
     /**

@@ -91,7 +91,7 @@ public class NewsfeedService {
             Page<Newsfeed> newsfeedList;
 
             // 전체검색 / 기간별 검색
-            if (startTime == null) {
+            if (startTime == null || endTime ==null) {
                 newsfeedList = newsfeedRepository.findAll(pageable);
             } else {
                 newsfeedList = newsfeedRepository.findAllByCreateAtBetween(startTime, endTime,
@@ -102,7 +102,7 @@ public class NewsfeedService {
                 NewsfeedResponseDto::new);
             return ResponseEntity.ok(newsfeedResponseDtoPage);
         } catch (RuntimeException e) {
-
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(null);
         }
 
@@ -133,11 +133,14 @@ public class NewsfeedService {
             newsfeed.setContent(contentRequestDto.getContent());
 
 
+            NewsfeedResponseDto newsfeedResponseDto = new NewsfeedResponseDto(newsfeed);
+
+            return ResponseEntity.ok(newsfeedResponseDto);
+
         } catch (ConstraintViolationException e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(null);
         }
-
-        return null;
     }
 
 

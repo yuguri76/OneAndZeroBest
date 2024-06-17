@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.3.0'
     id 'io.spring.dependency-management' version '1.1.5'
+    id 'jacoco'
 }
 
 group = 'com.sparta'
@@ -42,10 +43,19 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'com.h2database:h2'
+
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
 
+    // Test dependencies
+    testImplementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2'
+    testRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.2'
+    testImplementation 'com.github.kstyrc:embedded-redis:0.6'
+    testImplementation 'redis.clients:jedis:4.2.3'
 
     // JWT
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
     compileOnly group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.5'
     runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
     runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
@@ -55,3 +65,47 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+jacoco {
+    toolVersion = "0.8.9"
+}
+
+/** Jacoco start **/
+test {
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it,
+                        includes: [
+                                '**/auth/dto/**',
+                                '**/auth/entity/User.class',
+                                '**/auth/service/UserDetailsServiceImpl.class',
+                                '**/auth/service/UserServiceImpl.class',
+                                '**/auth/controller/AuthRestController',
+                                '**/comment/dto/**',
+                                '**/comment/entity/**',
+                                '**/comment/service/**',
+                                '**/comment/controller/**',
+                                '**/newsfeed/controller/**',
+                                '**/newsfeed/dto/NewsfeedRequestDto.class',
+                                '**/newsfeed/entity/**',
+                                '**/newsfeed/service/**'
+                        ])
+            }))
+        }
+
+        xml.destination file("${buildDir}/jacoco/index.xml")
+        html.destination file("${buildDir}/jacoco/index.html")
+    }
+}
+
+jacocoTestCoverageVerification
