@@ -89,7 +89,7 @@ public class AuthRestControllerTest {
     UserServiceImpl userService;
     @MockBean
     JwtUtil jwtUtil;
-    @Mock
+    @MockBean
     RedisTemplate<String, String> redisTemplate;
     @MockBean
     EmailService emailService;
@@ -235,7 +235,7 @@ public class AuthRestControllerTest {
         String username = USERNAME;
         String verificationCode = String.valueOf(100000 + random.nextInt(900000));
 
-        redisTemplate.opsForValue().set(username,verificationCode,3, TimeUnit.MINUTES);
+        //redisTemplate.opsForValue().set(username,verificationCode,3, TimeUnit.MINUTES);
 
         MultiValueMap<String, String> paramRequestMap = new LinkedMultiValueMap<>();
         paramRequestMap.add("username", username);

@@ -42,6 +42,9 @@ public class CommentService {
     public CommentResponseDto addComment(Long newsfeedId, CommentRequestDto requestDto,
         String token) {
         Long userId = validateToken(token);
+        if(requestDto.getContent().isEmpty())
+            throw new IllegalArgumentException();
+
         Comment comment = new Comment(newsfeedId, userId, requestDto.getContent());
         comment = commentRepository.save(comment);
         return new CommentResponseDto(comment);

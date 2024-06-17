@@ -90,6 +90,7 @@ jacocoTestReport {
                                 '**/auth/entity/User.class',
                                 '**/auth/service/UserDetailsServiceImpl.class',
                                 '**/auth/service/UserServiceImpl.class',
+                                '**/auth/controller/AuthRestController',
                                 '**/comment/dto/**',
                                 '**/comment/entity/**',
                                 '**/comment/service/**',

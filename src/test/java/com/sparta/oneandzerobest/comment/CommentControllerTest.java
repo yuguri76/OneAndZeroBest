@@ -1,5 +1,6 @@
 package com.sparta.oneandzerobest.comment;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sparta.oneandzerobest.auth.entity.User;
 import com.sparta.oneandzerobest.auth.entity.UserStatus;
@@ -8,6 +9,7 @@ import com.sparta.oneandzerobest.auth.service.UserDetailsServiceImpl;
 import com.sparta.oneandzerobest.auth.util.JwtUtil;
 import com.sparta.oneandzerobest.comment.controller.CommentController;
 import com.sparta.oneandzerobest.comment.dto.CommentRequestDto;
+import com.sparta.oneandzerobest.comment.dto.CommentResponseDto;
 import com.sparta.oneandzerobest.comment.entity.Comment;
 import com.sparta.oneandzerobest.comment.repository.CommentRepository;
 import com.sparta.oneandzerobest.comment.service.CommentService;
@@ -41,6 +43,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import static org.mockito.BDDMockito.*;
 
 @WebMvcTest(
     controllers = CommentController.class,
@@ -122,12 +126,58 @@ public class CommentControllerTest {
         commentRequestDto.setNewsfeedId(id);
         commentRequestDto.setContent(content);
 
+
         // when - then
         mvc.perform(MockMvcRequestBuilders.post("/newsfeed/{newsfeedId}/comment", id)
                 .header("Authorization", token)
                 .contentType("application/json")
                 .content(objectMapper.writeValueAsString(commentRequestDto)))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
+            .andDo(MockMvcResultHandlers.print());
+
+
+    }
+
+    @Test
+    @DisplayName("댓글 생성 실패_댓글내용없음")
+    void should_ThrowException_when_commentContentNull() throws Exception {
+        // given
+        String token = "Bearer " + jwtUtil.createAccessToken(USERNAME);
+
+        Long id = 1L; // 뉴스피드 id
+        String content = "";
+        CommentRequestDto commentRequestDto = new CommentRequestDto();
+        commentRequestDto.setNewsfeedId(id);
+        commentRequestDto.setContent(content);
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.post("/newsfeed/{newsfeedId}/comment", id)
+                .header("Authorization", token)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(commentRequestDto)))
+            .andExpect(MockMvcResultMatchers.status().isBadRequest())
+            .andExpect(MockMvcResultMatchers.content().string("댓글 내용을 입력하지 않았습니다."))
+            .andDo(MockMvcResultHandlers.print());
+    }
+
+    @Test
+    @DisplayName("댓글 생성 실패_인증실패")
+    void should_ThrowException_when_Unauthorized() throws Exception{
+        String token = jwtUtil.createAccessToken(USERNAME);
+
+        Long id = 1L; // 뉴스피드 id
+        String content = "comment content";
+        CommentRequestDto commentRequestDto = new CommentRequestDto();
+        commentRequestDto.setNewsfeedId(id);
+        commentRequestDto.setContent(content);
+
+        // when - then
+        mvc.perform(MockMvcRequestBuilders.post("/newsfeed/{newsfeedId}/comment", id)
+                .header("Authorization", token)
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(commentRequestDto)))
+            .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+            .andExpect(MockMvcResultMatchers.content().string("인증 정보가 유효하지 않습니다."))
             .andDo(MockMvcResultHandlers.print());
     }
 
@@ -140,7 +190,6 @@ public class CommentControllerTest {
         String token = "Bearer " + jwtUtil.createAccessToken(USERNAME);
 
         // when - then
-
         mvc.perform(MockMvcRequestBuilders.get("/newsfeed/{newsfeedID}/comment", id)
                 .header("Authorization", token))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())

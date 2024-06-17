@@ -12,6 +12,7 @@ import com.sparta.oneandzerobest.auth.service.UserServiceImpl;
 import com.sparta.oneandzerobest.auth.util.JwtUtil;
 import com.sparta.oneandzerobest.config.MockSpringSecurityFilter;
 import com.sparta.oneandzerobest.config.TestJwtConfig;
+import com.sparta.oneandzerobest.exception.UnauthorizedException;
 import com.sparta.oneandzerobest.newsfeed.controller.NewsfeedController;
 import com.sparta.oneandzerobest.newsfeed.dto.NewsfeedRequestDto;
 import com.sparta.oneandzerobest.newsfeed.entity.Newsfeed;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -250,5 +252,24 @@ public class NewsfeedControllerTest {
                 .header("Authorization", token))
             .andDo(MockMvcResultHandlers.print());
     }
+
+//    @Test
+//    public void testUpdateImageToNewsfeed_Unauthorized() throws Exception {
+//        // Given
+//        MockMultipartFile imageFile = new MockMultipartFile("file", "test.jpg", MediaType.IMAGE_JPEG_VALUE, "Test Image Content".getBytes());
+//
+//        try (MockedStatic<JwtUtil> mockedJwtUtil = mockStatic(JwtUtil.class)) {
+//            mockedJwtUtil.when(() -> JwtUtil.extractClaims(anyString())).thenThrow(new UnauthorizedException("Invalid token"));
+//
+//            // When and Then
+//            mvc.perform(MockMvcRequestBuilders.multipart("/newsfeed/media")
+//                            .file(imageFile)
+//                            .param("id", "1")
+//                            .param("fileid", "1")
+//                            .header("Authorization", "Bearer testToken"))
+//                    .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+//                    .andExpect(MockMvcResultMatchers.jsonPath("$.message").value("Invalid token"));
+//        }
+//    }
 
 }
